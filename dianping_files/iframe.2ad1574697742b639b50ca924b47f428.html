@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!-- saved from url=(0085)http://j1.s1.dpfile.com/lib/1.0/cdn-perf/iframe.2ad1574697742b639b50ca924b47f428.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" href="cdn_middle.css" type="text/css">
+    <link rel="stylesheet" href="cdn_large.css" type="text/css">
+  </head>
+  <body onload="timePerf()">
+    <img height="47" src="cdn_small.png">
+    <script>
+    function timePerf() {
+        try {
+          if(window.performance) {
+            var host = window.location.host;
+            var entries = window.performance.getEntries();
+
+            var timestamp = (window.performance.timing && window.performance.timing.domComplete) ? window.performance.timing.domComplete : Date.now();
+
+            var rs = {};
+            var content = [];
+            for (var i = 0; i < entries.length; i++) {
+              var entry = entries[i];
+              var ce = content[i] = [];
+              ce.push(timestamp);
+              var name = entry.name.split('?')[0];
+              if(!name) continue;
+
+              if(/\/\/j\d\.p?s\d/.test(name))
+                name.replace(/\/\/j\d\./, '//j1.');
+
+              ce.push(name);
+              ce.push(Math.round(entry.domainLookupEnd - entry.domainLookupStart));
+              ce.push(Math.round(entry.connectEnd - entry.connectStart));
+              ce.push(Math.round(entry.responseStart - entry.requestStart));
+              ce.push(Math.round(entry.responseEnd - entry.responseStart));
+            }
+
+            var CAT_PERF_URL = "http://114.80.165.63/broker-service/api/cdn?v=1&c=";
+            var c = "";
+            for(var i = 0; i < content.length; ++i) {
+              var ce = content[i];
+              c+= ce.join('\t')+ "\n";
+            }
+
+            var img = new Image();
+            img.src = CAT_PERF_URL+ encodeURIComponent(c) + "&";
+          }
+        }catch(e) { console.error(e); }
+    }
+    </script>
+  
+
+</body></html>
