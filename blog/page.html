@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<!-- saved from url=(0069)http://www.golaravel.com/post/install-and-run-laravel-5-x-on-windows/ -->
+<html lang="zh-CN">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>在 Windows 上快速安装并运行 Laravel 5.x</title>
+    <meta name="description" content="">
+    <meta name="keywords" content="Laravel中文社区,php框架,laravel中文网,php framework,restful routing,laravel,laravel php">
+
+
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="shortcut icon" href="http://www.golaravel.com/assets/favicon.ico">
+
+    <link rel="stylesheet" href="page_files/bootstrap.min.css">
+    <link rel="stylesheet" href="page_files/font-awesome.min.css">
+    <link rel="stylesheet" href="page_files/monokai_sublime.min.css">
+    <link rel="stylesheet" href="../stylesheets/common.css">
+    <link rel="stylesheet" type="text/css" href="page_files/screen.css">
+
+    <script>
+        /*====================================================
+         THEME SETTINGS & GLOBAL VARIABLES
+         ====================================================*/
+
+        //  1. Sidebar Position
+        var sidebar_left = false; // Set true or flase for positioning sidebar on left
+
+        //  2. Recent Post count
+        var recent_post_count = 3;
+
+    </script>
+
+    <script>
+        var _hmt = _hmt || [];
+    </script>
+
+    <link rel="canonical" href="blog/page_files/page.html">
+    <meta name="generator" content="Ghost 0.6">
+    <link rel="alternate" type="application/rss+xml"
+          title="Laravel-简洁、优雅的PHP开发框架(PHP Web Framework)。- Laravel中文网（Laravel中国社区）"
+          href="http://www.golaravel.com/rss/">
+    <style id="fit-vids-style">
+        .fluid-width-video-wrapper {
+        width: 100%;
+        position: relative;
+        padding: 0;
+    }
+
+    .fluid-width-video-wrapper iframe, .fluid-width-video-wrapper object, .fluid-width-video-wrapper embed {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }</style>
+    <style id="style-1-cropbar-clipper">/* Copyright 2014 Evernote Corporation. All rights reserved. */
+    .en-markup-crop-options {
+        top: 18px !important;
+        left: 50% !important;
+        margin-left: -100px !important;
+        width: 200px !important;
+        border: 2px rgba(255, 255, 255, .38) solid !important;
+        border-radius: 4px !important;
+    }
+
+    .en-markup-crop-options div div:first-of-type {
+        margin-left: 0px !important;
+    }
+    </style>
+</head>
+<body class="post-template tag-laravel-5-1 tag-artisan">
+
+<!-- start header -->
+<header class="main-header page-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12">
+
+                <h1><span class="hide">Laravel - </span>lepdou的个人博客</h1>
+
+                <h3 style="color:#ffffff;text-align: right">一个平凡的程序员屌丝</h3>
+
+                <img src="../index_files/4e4bd788405aab87f03d26edc4ab4.png" alt="Laravel" class="hide">
+            </div>
+
+        </div>
+    </div>
+</header>
+<!-- end header -->
+
+<!-- start site's main content area -->
+<section class="content-wrap">
+    <div class="container">
+        <div class="row">
+
+            <main class="col-md-8 main-content">
+
+
+                <div class="about-author clearfix">
+                    <a href="http://www.golaravel.com/author/wangsai/"><img
+                            src="page_files/82b9646073bef7a7d67c6cd1db987.png" alt="王赛" class="avatar pull-left"></a>
+
+                    <div class="details">
+                        <div class="author">
+                            关于作者 <a href="http://www.golaravel.com/author/wangsai/">王赛</a>
+                        </div>
+                        <div class="meta-info">
+                            <span class="loaction"><i class="fa fa-home"></i>北京</span>
+                            <span class="website"><i class="fa fa-globe"></i><a href="http://www.bootcss.com/"
+                                                                                targer="_blank">个人网站/博客</a></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="prev-next-wrap clearfix">
+
+                    <a class="btn btn-default" href="http://www.golaravel.com/post/laravel-5-1-is-released/"><i
+                            class="fa fa-angle-left fa-fw"></i> Laravel 5.1 LTS 版本正式发布</a>
+                    &nbsp;
+
+                    <a class="btn btn-default"
+                       href="http://www.golaravel.com/post/packagist-composer-chinese-mirror-reloaded/">Packagist/Composer
+                        中国全量镜像重装上阵 <i class="fa fa-angle-right fa-fw"></i></a>
+                </div>
+
+
+            </main>
+
+            <aside class="col-md-4 sidebar">
+                <!-- start widget -->
+                <!-- end widget -->
+
+                <!-- start tag cloud widget -->
+                <div class="widget">
+                    <h4 class="title">个人信息</h4>
+
+                    <div class="content community">
+                        <p><a href="#"><i class="fa fa-comments"></i>QQ：651903000</a></p>
+                        <p><i class="fa fa-comments"></i>公司：大众点评网</p>
+
+                    </div>
+                </div>
+                <!-- end tag cloud widget -->
+
+                <!-- start widget -->
+                <div class="widget">
+                    <h4 class="title">github主页</h4>
+
+                    <div class="content download">
+                        <a href="http://www.golaravel.com/download/" class="btn btn-default btn-block"
+                           onclick="_hmt.push([&#39;_trackEvent&#39;, &#39;big-button&#39;, &#39;click&#39;, &#39;下载 Laravel &amp; Lumen&#39;])">立即前往</a>
+                    </div>
+                </div>
+                <!-- end widget -->
+
+
+                <!-- start tag cloud widget -->
+                、
+                <!-- end tag cloud widget -->
+
+                <!-- start widget -->
+                <!-- end widget -->
+
+                <!-- start widget -->
+                <!-- end widget -->
+            </aside>
+
+        </div>
+    </div>
+</section>
+
+<div class="copyright">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <span>Copyright © <a href="http://www.golaravel.com/">Laravel 中文网</a></span> |
+                <span><a href="http://www.miibeian.gov.cn/" target="_blank">京ICP备11008151号</a></span> |
+                <span>京公网安备11010802014853</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="http://www.golaravel.com/post/install-and-run-laravel-5-x-on-windows/#" id="back-to-top"
+   style="display: none;"><i class="fa fa-angle-up"></i></a>
+
+<script src="page_files/jquery.min.js"></script>
+<script src="page_files/bootstrap.min.js"></script>
+<script src="page_files/jquery.fitvids.min.js"></script>
+<script src="page_files/highlight.min.js"></script>
+<script src="page_files/main.js"></script>
+
+
+<script>
+    $(document).ready(function () {
+        var qqgroup = 'QQ群：462694081';
+        $('.qq-group').text(qqgroup);
+    });
+</script>
+
+<script type="text/javascript">
+    var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+    document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3Fc8d13872a523d9c286aa7affbe0921f1' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script src="page_files/h.js" type="text/javascript"></script>
+
+
+</body>
+</html>
