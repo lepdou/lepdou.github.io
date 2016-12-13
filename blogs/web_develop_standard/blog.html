@@ -65,10 +65,10 @@
 
             <p><strong>系统内部数据类型转化</strong> <br>
                 包括：BO转化成DTO、BO转化成VO。这几种数据模型含义下一节会具体讲述。
-                <strong>数据内容协议转化</strong><br>
+                <br><strong>数据内容协议转化</strong><br>
                 举个例子说明会更加容易理解。假设有一个Open API，功能是返回User信息。这个Open
                 API对A公司开放的信息包括：昵称、头像两个字段，而B公司是本公司的VIP用户，对其开放的信息不仅包含昵称、头像还包括电话、email等隐私信息。在Service层只有一个返回UserBO的接口，UserBO包含用户所有的信息，在Controller层根据不同公司的类型，生成不同的UserDTO，此过程称为数据内容协议转化。
-                <strong>数据传输格式协议转化</strong> <br>
+                <br><strong>数据传输格式协议转化</strong> <br>
                 包括：把对象序列化成json、xml格式数据、html页面等</p>
 
             <h4>系统输出</h4>
