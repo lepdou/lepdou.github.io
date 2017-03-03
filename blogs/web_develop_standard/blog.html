@@ -31,7 +31,7 @@
             <h2>分层</h2>
 
             <p>典型的web应用分为三层，即：Controller层、Service层、Dao层。如下图所示：<br>
-                <img alt="三层模型" src="./img/first.png" style="width: 600px;height: 480px"/></p>
+                <img alt="三层模型" src="./img/first.png" style="width: 300px;height: 280px"/></p>
 
             <h3>Controller层</h3>
 
@@ -152,9 +152,9 @@
                 * vo、dto、model =&gt; Controller层</p>
 
             <p>如下图所示： <br>
-                <img alt="" src="./img/second.png" style="width: 600px;height: 500px"/><br>
+                <img alt="" src="./img/second.png" style="width: 350px;height: 300px"/><br>
                 任何的规范都是灵活的，如果按照上面严格执行的话，就会产生很多属性基本一致的类，而且类型转换代码非常机械化。对于大部分简单的系统来说，各个类型之间，字段几乎是完全一致。灵活的做法是下层的对象可以上升到上层，比如某一个资源没有BO，也没有VO，只有PO。也就是说PO存在于Dao，Service和Controller三层。但是反之则不行，例如VO、DTO、Model不应该在Service层出现，更不能在Dao层出现。所以最佳实践则是最少要两层。如下图所示：<br>
-                <img alt="" src="./img/third.png" style="width: 600px;height: 500px"/><br>
+                <img alt="" src="./img/third.png" style="width: 350px;height: 300px"/><br>
                 另外需要注意一点就是：其它系统的DTO等于自身系统的PO，也就是说上面提到的所有的类型其实是相对于数据流的位置而定的。所以，在Service层流通的DTO其实是PO的角色。但是自身系统对外的DTO就不应该在Service层出现。
 
             </p>
