@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title>Apollo JVM GC调优</title>
+    <link rel="icon" href="../../img/le.png">
+    <link rel="stylesheet" type="text/css" href="../../vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="../../styles/common.css">
+</head>
+<body>
+
+<div class="blog container-fluid">
+    <div class="blog-header row text-center">
+        <h3>Apollo JVM GC调优</h3>
+        <div class="col-md-offset-7 text-left">
+            -- 2017-06-12 于 coffer
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="blog-body row">
+        <div class="col-md-offset-2 col-md-8">
+            <h2>Apollo携程现状</h2>
+
+            <p><a href="https://github.com/ctripcorp/apollo">Apollo(点击跳转到Github)</a>作为携程新一代的配置中心，目前线上部署10台Config
+                Server，服务于3.5w+客户端。</p>
+
+            <p>今天要讨论的是一次Apollo的JVM调优。</p>
+
+            <h3>调优前</h3>
+
+            <p>调优前Cat记录GC信息如下图所示：
+            <div class="text-center">
+                <img src="img/调优前.png" style="width: 675px;height: 400px;">
+                <h6>(图一&nbsp;调优前)</h6>
+            </div>
+
+            <p>从图中可以看出：
+                YGC 平均一分钟一次，YGC每次耗时在4、5百毫秒左右。
+                OGC一小时五次，每次耗时300ms左右。</p>
+
+            <p>对于Apollo这种最底层的中间件，显然GC表现一般。</p>
+
+            <h3>调优第一步：JVM全面剖析</h3>
+
+            <p>市面上JVM分析工具很多，比如JConsole、Memory Analyzer Tool等。这里我们使用的是JDK7之后自带的工具JMC（Java Mission Controll）。</p>
+
+            <h4>启动JMC监控</h4>
+
+            <p>启动JMC监控很简单，只需要在启动应用的时候加入以下两个系统变量。</p>
+
+            <p>
+                <code>
+                    -XX:+UnlockCommercialFeatures -XX:+FlightRecorder
+                </code>
+            </p>
+            <p>
+                需要说明的是：JMC是通过事件机制来监控JVM，所以对JVM侵入很低，性能影响很小，可以忽略不计。</p>
+
+            <h4>生成黑匣子</h4>
+
+            <p>大家都知道黑匣子，在飞机上用来记录飞机运行数据的设备。JMC也可以生成一个黑匣子用来记录JVM运行数据。命令如下：</p>
+
+            <p><code>
+                jcmd ${PID} JFR.start duration=60s filename=/tmp/myrecording.jfr
+            </code></p>
+
+            <blockquote><p>需要切换到启动应用的用户，否则会失败。比如configservice是deploy用户启动的，那么必须切到deploy用户，切换用户命令如下：
+                <br> sudo -i
+                <br>su deploy</p></blockquote>
+
+            <p>以上命令的意思是监控60s，并记录到/tmp目录下的myrecording.jfr文件里。</p>
+
+            <h4>分析黑匣子数据</h4>
+
+            <p>在命令行里输入
+                <code>
+                    jmc
+                </code>
+                就会启动分析器，然后打开上一步中的黑匣子（myrecording.jfr）。如下图所示：
+            <div class="text-center">
+                <img src="img/jmc.png" style="width: 675px;height: 450px;">
+                <h6>(图二&nbsp;JMC截图)</h6>
+            </div>
+
+            <p>JMC功能非常强大，这里大致罗列一下比较实用的功能：
+            <ol>
+                <li>查看JVM参数、系统变量</li>
+                <li> 按类查看TLAB中分配情况</li>
+                <li> 创建对象的堆栈信息</li>
+                <li> 按线程查看TLAB中分配情况</li>
+                <li>创建对象的堆栈信息</li>
+                <li> TLAB详细信息。TLAB数、最大TLAB、最小TLAB、平均TLAB大小、TLAB分配内存、分配速率</li>
+                <li>查看一次GC各个阶段的耗时</li>
+                <li>查看热点代码</li>
+                <li>查看热点线程、锁竞争相关</li>
+                <li> 本地文件IO、Socket IO</li>
+
+            </ol>
+
+            <blockquote>
+                <p>这里简单介绍一下TLAB(Thread Local Allocation
+                    Buffer)。由于Heap不是线程私有的，所以在Heap上分配对象内存的时候必须要加锁。TLAB就是为了减少锁，给每个线程单独分配的空间。分配对象内存的时候优先从TLAB空间上分配，如果TLAB空间不够才会从外部共享空间分配。从JMC上也可以看到在TLAB里、外分配对象的比例。如果对象在TLAB外分配的多肯定是有问题的。</p>
+            </blockquote>
+            <h5>Heap信息</h5>
+
+            <p>调优前Heap信息如下图所示：
+            <div class="text-center">
+                <img src="img/堆信息.png" style="width: 675px;height: 450px;">
+                <h6>(图3)</h6>
+            </div>
+
+            <p>从图中可以看出：堆总大小为6G、新生代大小为4G。老年代大小1.7G左右（2G - 方法区）</p>
+
+            <h5>Eden区中分配最多的对象</h5>
+
+            <div class="text-center">
+                <img src="img/类分配.png" style="width: 675px;height: 450px;">
+                <h6>(图4)</h6>
+            </div>
+
+            <p>从图中可以看出，创建最多对象的类是：char[] 和byte[]。这里很好理解，对象本质上就是内存中一块内存空间，并且到最后都是由基本类型组成。基本类型中char和byte又是使用最多的。
+                从红框中可以看到，创建char[]对象最多的代码是springframework.util.AntPathMatcher类的isPotentialMatch。找到热点分配对象代码就可以debug源码，看一下这一块逻辑为什么会创建如此之多的char[]。
+                isPotentialMatch和skipSegment方法代码如下：
+            <div class="text-center">
+                <img src="img/isPotentialMatch.png" style="width: 675px;height: 350px;">
+                <h6>(图4)</h6>
+            </div>
+
+            <div class="text-center">
+                <img src="img/skipSegment.png" style="width: 675px;height: 350px;">
+                <h6>(图5)</h6>
+            </div>
+
+            <p>这里的代码逻辑就是spring mvc在处理一个request的时候，matcher的过程。但是matcher目标集合并不是我们自定义的controller，而是spring boot、spring
+                mvc内置的Endpoint。
+            <div class="text-center">
+                <img src="img/endpoint.png" style="width: 575px;height: 250px;">
+                <h6>(图6)</h6>
+            </div>
+            每一个请求都要和60个字符串匹配，显然是没有必要的。熟悉spring boot的同学一眼就看出来了，这些endpoint是spring-boot-actuator和spring
+            mvc的。这些endpoint对于中小公司没有自己的监控系统还是有一点用处的，但是对于携程这种有完善的监控系统的公司来说，则没有必要。所以可以关闭这些Endpoint。关闭方法是在application.yml或者application.properties加入以下两个配置：
+            <code></code></p>
+
+
+            <code>
+                <p>endpoints.enabled=false</p>
+                <p>management.port=-1</p>
+            </code>
+            <p>
+                关闭之后，YGC频率从一分钟一次变成两分钟一次。效果还是很明显的，
+                但是OGC并没有减少。其实也很好理解，上诉提到的char[]是典型的“短命”对象，
+                在每一次YGC的时候肯定能被回收掉，所以只能起到减少YGC的效果。
+            </p>
+
+            <h5>查看按线程分配对象</h5>
+
+            <p>JMC可以按线程的维度查看对象分配情况，如下图所示：
+            <div class="text-center">
+                <img src="img/线程分配.png" style="width: 675px;height: 450px;">
+                <h6>(图7)</h6>
+            </div>
+
+            <p>
+                可以看到分配对象前两位是cat-DefaultTreeSender和Apollo-instanceConfigAuditUtil-1。其它线程从名字上看就是tomcat的http线程了。这里就发现为什么Apollo-instanceConfigAuditUtil-1会创建那么多对象呢？同样追踪堆栈，发现jpa创建了很大一部分。Apollo项目中使用spring-data作为DAL层框架。从Cat上看，这个线程执行的两个SQL
+                QPS达到57。
+            <div class="text-center">
+                <img src="img/audit线程.png" style="width: 675px;height: 250px;">
+                <h6>(图8)</h6>
+            </div>
+            分析Apollo代码发现，这个线程执行的代码有两个缓存设置大小上限为1w个。由于这个值是Apollo刚上线时设定的，在一开始肯定是足够使用的。但是，到后期随着接入的应用数增加，已远远不够了。所以导致缓存命中率很低，DB
+            QPS很高。这里提一句题外话，如果缓存的对象增长可控，比如总大小在几十兆级别，数量在10w级别内都是可控的，在设计缓存的时候就没必要设置上限。例如上诉提到的两个缓存是记录客户端信息的。客户端信息撑死几万个、10几万个。
+            去掉缓存上限之后，这两个QPS基本上等于0了，DB QPS减少为原来的10分之1, 对DB的压力也大大减少。所以，有时候排查一个问题，能顺带发现其它问题。</p>
+
+            <h5>分析GC日志</h5>
+
+            <p>下图是截图的一段GC日志：
+            <div class="text-center">
+                <img src="img/gc日志.png" style="width: 675px;height: 250px;">
+                <h6>(图9)</h6>
+            </div>
+
+            从GC日志可以得到以下信息：
+            <ul>
+                <li>eden区大小为：3774M</li>
+                <li>Survivor区大小为：209M</li>
+                <li>此次GC，Survivor区溢出</li>
+                <li>老年代大小为2G，此次GC之后老年代已使用内存从624M增加到700M
+                </li>
+            </ul>
+
+            这里说一下有哪些对象会存活在老年代：
+            <ul>
+                <li>大对象直接分配在老年代</li>
+                <li>持久对象在多次YGC之后还未被回收（缓存对象）</li>
+                <li>一次YGC Survivor溢出会导致升级到老年代的生命阀值变少，也就说溢出的“老对象”直接被转移到老年代</li>
+            </ul>
+
+            <p>显然这次GC有第三种对象进入到老年代。这种情况下进入到老年代基本上都是短命对象。所以针对这种情况，可以调大Survivor区大小。
+                对于上述提到的第二种情况，可以调大eden区大小减少YGC频率，也就是减慢对象成长速度。当然，减少对象创建是最直接、最有效的方式。</p>
+
+            <p>所以调整完JVM参数之后各个区的大小为：Survivor区500M * 2，Eden区4G，Old区2G。
+                效果如下图所示：
+
+            <div class="text-center">
+                <img src="img/调优后.png" style="width: 675px;height: 350px;">
+                <h6>(图10)</h6>
+            </div>
+
+            调整之后，可以看到YGC变成两分钟一次，OGC一小时一次。对于系统来说，还是比较健康的。但是YGC耗时还是比较久（300多ms），YGC
+            300ms主要消耗在哪里呢？对比其它系统的GC数据和本地测试，发现YGC耗时主要花在copy内存数据上，在本地利用System.copyArray测试数据如下：
+            <table border="1">
+                <tr>
+                    <td>大小</td>
+                    <td>时间</td>
+                </tr>
+                <tr>
+                    <td>100M</td>
+                    <td>70ms</td>
+                </tr>
+                <tr>
+                    <td>200M</td>
+                    <td>135ms</td>
+                </tr>
+                <tr>
+                    <td>300M</td>
+                    <td>180ms</td>
+                </tr>
+                <tr>
+                    <td>400M</td>
+                    <td>250ms</td>
+                </tr>
+            </table>
+
+
+            <p>内存copy并不会导致Stop The
+                World，所以久一点也是能够接受的。但是目前还有一个问题没有解决，为什么OGC还是会存在，理论上只有系统中的缓存会持久存在在老年代，其它对象在YGC阶段就会被回收掉。这个问题，由于时间问题，没有得出结论，后面有时间会继续分析补充上。</p>
+
+            <p>至此，Apollo GC调优第一阶段就完成了，从效果上看还是比较明显的。后续会继续分析OGC的原因。</p>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>
